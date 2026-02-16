@@ -5,6 +5,7 @@ const app = express();
 const querystring = require("querystring");
 const { createCanvas, loadImage } = require("canvas");
 const path = require("path");
+const tileSize = 64;
 const difficulties = [
     {
         name: "beginner",
@@ -130,7 +131,7 @@ flag: s/$/fx,y:$`;
         ${inSetup ? "" : `<img src="${image}" usemap="#mines"><map name="mines">${tileArr.map((m, i) => {
             let x = i % game.width;
             let y = Math.floor(i / game.width);
-            return `<area shape="rect" coords="${x * 64},${y * 64},${(x + 1) * 64},${(y + 1) * 64}" href="${req.url.replace("$", `d${x + 1},${y + 1}:$`)}">`
+            return `<area shape="rect" coords="${x * tileSize},${y * tileSize},${(x + 1) * tileSize},${(y + 1) * tileSize}" href="${req.url.replace("$", `d${x + 1},${y + 1}:$`)}">`
         }).join("")}</map>`}
         <blockquote><p>alphys is W faps.</p></blockquote>
         <p>—SantyFo0x 15/02/2026</p>
@@ -176,11 +177,8 @@ ${loggedGame}`);
     //let wide = (game.width / game.height) > 1;
     //const canvas = createCanvas(768 * (wide ? game.width / game.height : 1), 768 * (wide ? 1 : game.height / game.width));
     //I will TRY to make it scale properly, i hope it doesn't catch on fire
-    const canvas = createCanvas(game.width * 64, game.height * 64);
+    const canvas = createCanvas(game.width * tileSize, game.height * tileSize);
     const ctx = canvas.getContext("2d");
-    let tileWidth = canvas.width / game.width;
-    let tileHeight = canvas.height / game.height;
-    let fontSize = Math.floor(tileHeight / 2);
     let coordsFontSize = 25;
     let gameOverFontSize = 100;
     let lost = checkForOpenBombs(game.tiles);
@@ -190,31 +188,30 @@ ${loggedGame}`);
         let row = game.tiles[i];
         for(let j = 0; j < row.length; j++) {
             let tile = row[j];
-            ctx.drawImage(sprites.bg, j * tileWidth, i * tileHeight, tileWidth, tileHeight);
+            drawSprite(ctx, "bg", j, i);
             if(tile.open) {
                 if(!tile.bomb) {
-                    ctx.font = `${fontSize}px sans-serif`;
                     let nearbyBombs = getNearbyBombs(j, i, game.tiles);
                     if(nearbyBombs > 0) {
-                        ctx.drawImage(sprites[nearbyBombs], j * tileWidth, i * tileHeight, tileWidth, tileHeight);
+                        drawSprite(ctx, nearbyBombs, j, i);
                     }
                 }
                 else {
-                    ctx.drawImage(sprites.bgded, j * tileWidth, i * tileHeight, tileWidth, tileHeight);
+                    drawSprite(ctx, "bgded", j, i);
                 }
             }
             else if(!lost || (!tile.bomb && !tile.flagged) || (tile.flagged && tile.bomb)) {
-                drawTile(ctx, j * tileWidth, i * tileHeight, tileWidth, tileHeight, tile.flagged, game.plead);
+                drawTile(ctx, j, i, tile.flagged, game.plead);
             }
             if(lost && ((tile.bomb && !tile.flagged) || (!tile.bomb && tile.flagged))) {
-                ctx.drawImage(sprites.mine, j * tileWidth, i * tileHeight, tileWidth, tileHeight);
-                if(!tile.bomb && tile.flagged) ctx.drawImage(sprites.nomine, j * tileWidth, i * tileHeight, tileWidth, tileHeight);
+                drawSprite(ctx, "mine", j, i);
+                if(!tile.bomb && tile.flagged) drawSprite(ctx, "nomine", j, i);
             }
             if(j === 0 || i === 0) {
                 ctx.font = `${coordsFontSize}px sans-serif`;
                 ctx.fillStyle = "black";
                 let value = Number(j || i) + 1;
-                ctx.fillText(value, j * tileWidth, i * tileHeight + coordsFontSize);
+                ctx.fillText(value, j * tileSize, i * tileSize + coordsFontSize);
             }
         }
     }
@@ -236,15 +233,19 @@ ${loggedGame}`);
     console.log("done");
 });
 
-function drawTile(ctx, x, y, tileWidth, tileHeight, flagged = false, plead = false, won = false) {
+function drawSprite(ctx, sprite, x, y) {
+    ctx.drawImage(sprites[sprite], x * tileSize, y * tileSize, tileSize, tileSize);
+}
+
+function drawTile(ctx, x, y, flagged = false, plead = false, won = false) {
     if(!plead) {
-        ctx.drawImage(sprites.square, x, y, tileWidth, tileHeight);
+        drawSprite(ctx, "square", x, y);
     }
     else {
-        ctx.drawImage(sprites.plead, x, y, tileWidth, tileHeight);
+        drawSprite(ctx, "plead", x, y);
     }
     if(flagged) {
-        ctx.drawImage(sprites.flag, x, y, tileWidth, tileHeight);
+        drawSprite(ctx, "flag", x, y);
     }
 }
 function checkForOpenBombs(tiles) {
