@@ -127,9 +127,13 @@ flag: s/$/fx,y:$`;
         <h1>${title}</h1>
         <p>(You're meant to use this on Discord. Go to any Discord channel, and send this url)</p>
         <pre>${description}</pre>
-        ${inSetup ? "" : `<img src="${image}">`}
-        <blockquote><p>you're such a silly little boykisser</p></blockquote>
-        <p>—SantyFo0x 15/01/2024</p>
+        ${inSetup ? "" : `<img src="${image}" usemap="#mines"><map name="mines">${tileArr.map((m, i) => {
+            let x = i % game.width;
+            let y = Math.floor(i / game.width);
+            return `<area shape="rect" coords="${x * 64},${y * 64},${(x + 1) * 64},${(y + 1) * 64}" href="${req.url.replace("$", `d${x + 1},${y + 1}:$`)}">`
+        }).join("")}</map>`}
+        <blockquote><p>alphys is W faps.</p></blockquote>
+        <p>—SantyFo0x 15/02/2026</p>
     </body>
 </html>`)
 });
